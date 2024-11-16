@@ -1,5 +1,5 @@
 from ast import Load
-from random import shuffle
+from random import shuffle, random
 import pickle
 from tictactoegame import Game 
 from abc import ABC, abstractmethod
@@ -19,10 +19,11 @@ class RandomPolicy(Policy):
         return free_states[0]
 
 class TDPolicy(Policy):
-    def __init__(self, step_size_parameter: float, pickle_path: str|None, mark:str) -> None:
+    def __init__(self, step_size_parameter: float, exploration_parameter: float, pickle_path: str|None, mark:str) -> None:
         super().__init__()
         self.mark = mark
         self.step_size_parameter = step_size_parameter
+        self.exploration_parameter = exploration_parameter
         
         if pickle_path is None:
             self.valuefunc = self._init_valuefunc()
@@ -59,27 +60,34 @@ class TDPolicy(Policy):
             assert type(value_func) == dict
             return value_func
 
-    def update(self, cur_state:  float, new_val: float):
+    def update(self, cur_state:  int, new_val: float):
         cur_val = self.valuefunc[cur_state]
-        self.valuefunc[cur_state] = cur_val + self.step_size_parameter * (new_val - cur_val)
+        updatestep = cur_val + self.step_size_parameter * (new_val - cur_val)
+        assert 0 <= updatestep <= 1.0 
+        self.valuefunc[cur_state] = updatestep
 
     def predict(self, game: Game, checkvalue: str) -> int:
         free_states = game.free_states(checkvalue)
         shuffle(free_states)
-        best_val = -1
-        best_state = None
-        for state in free_states:
-            if self.valuefunc[state] > best_val:
-                best_state = state
 
-        if best_state is None:
-            raise Exception("no best state")
+        if random() > self.exploration_parameter:
+            best_val = -1
 
-        self.update(game._get_state_num(), best_val)
+            best_state = None
+            for state in free_states:
+                if self.valuefunc[state] > best_val:
+                    best_state = state
+                    best_val = self.valuefunc[state]
 
-        return best_state
+            if best_state is None:
+                raise Exception("no best state")
+            self.update(game._get_state_num(), best_val)
 
+            return best_state
+        else:
+            return free_states[0]
 
+        
 
 
 class Agent:

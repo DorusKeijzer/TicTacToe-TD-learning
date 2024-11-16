@@ -1,9 +1,13 @@
+from pandas.core import window
 from agents import Agent, RandomPolicy, TDPolicy 
 from tictactoegame import Game
 from matplotlib import pyplot as plt
+import pandas as pd
 
 class Match:
     def __init__(self, agent_1: Agent, agent_2: Agent):
+        assert set([agent_2.mark, agent_1.mark]) == set(["x", "o"])
+
         self.agent_1 = agent_1
         self.agent_2 = agent_2
 
@@ -11,8 +15,12 @@ class Match:
         won = False
         winner = None
         turn = 0
+        if self.agent_2.mark == "x": 
+            order = [self.agent_2, self.agent_1]
+        else:
+            order = [self.agent_1, self.agent_2]
         while won is False and turn < 9:
-            moving_agent = [self.agent_1, self.agent_2][turn % 2]
+            moving_agent = order[turn % 2]
             game.update_state(moving_agent.predict(game))
             turn += 1
             if game.wins("x") or game.wins("o"):
@@ -21,28 +29,54 @@ class Match:
         return winner
 
 if __name__ == "__main__":
-    a_1 = Agent(TDPolicy(0.01, None, "x"), "x")
-    a_2 = Agent(RandomPolicy(), "o")
+    a_1 = Agent(TDPolicy(0.01, 0.1, None, "o"), "o")
+    # a_2 = Agent(TDPolicy(0.01, None, "o"), "o")
+    a_2 = Agent(RandomPolicy(), "x")
+    # a_1 = Agent(RandomPolicy(), "x")
     m = Match(a_1, a_2)
     a1_wins, a2_wins, draws, total = 0,0,0,0
     a_1_history, a_2_history, draw_history = [], [], []
+    history = []
 
-    for i in range(1000):
+    num_games = 1000000
+    for i in range(num_games):
         g = Game()
         winner = m.play(g)
         if winner == a_1:
             a1_wins += 1
+            history.append(1)
         elif winner == a_2:
             a2_wins += 1
+            history.append(-1)
         else:
             draws += 1
+            history.append(0)
         total += 1
-        draw_history.append(draws/total)
-        a_2_history.append(a2_wins/total)
-        a_1_history.append(a1_wins/total)
+        if i % (num_games/100) == 0:
+            print(f"{(100*i)/num_games}%")
+            valuefunc = set([a_1.policy.valuefunc[k] for k in a_1.policy.valuefunc.keys()])
+            
+            print(len(valuefunc))
 
-    plt.plot(a_1_history, label="A1 History")
-    plt.plot(a_2_history, label="A2 History")
-    plt.plot(draw_history, label="Draw History")
-    plt.legend()  # Add a legend to differentiate lines
-    plt.savefig("test.png")
+    df = pd.DataFrame({"game_number": range(len(history)), "result": history})
+
+
+    df["rolling_win_rate_a1"] = df["result"].rolling(window=300).apply(lambda x: (x > 0).mean(), raw=True)
+    df["rolling_win_rate_a2"] = df["result"].rolling(window=300).apply(lambda x: (x < 0).mean(), raw=True)
+    df["rolling_draw_rate"] = df["result"].rolling(window=300).apply(lambda x: (x == 0).mean(), raw=True)
+
+    # Plotting
+    plt.figure(figsize=(12, 6))
+
+    plt.plot(df["game_number"], df["rolling_win_rate_a1"], label="Agent 1 Win Rate", color="blue")
+    plt.plot(df["game_number"], df["rolling_win_rate_a2"], label="Agent 2 Win Rate", color="red")
+    plt.plot(df["game_number"], df["rolling_draw_rate"], label="Draw Rate", color="gray")
+    plt.axhline(0.5, color="black", linestyle="--", label="50% Threshold")
+
+    plt.xlabel("Game Number")
+    plt.ylabel("Rate")
+    plt.title("Rolling Win/Draw Rates Over Time")
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    plt.show()
