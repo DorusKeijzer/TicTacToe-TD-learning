@@ -42,7 +42,7 @@ class Game:
                 index += 1
         return res
 
-    def free_states(self, checkvalue: str):
+    def free_states(self, checkvalue: str) -> list[int]:
         res = []
         free_squares = self._free_squares()
         for row,col in free_squares:

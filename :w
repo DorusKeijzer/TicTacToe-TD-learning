@@ -21,13 +21,12 @@ class RandomPolicy(Policy):
 class TDPolicy(Policy):
     def __init__(self, step_size_parameter: float, pickle_path: str|None, mark:str) -> None:
         super().__init__()
-        self.mark = mark
-        self.step_size_parameter = step_size_parameter
-        
         if pickle_path is None:
             self.valuefunc = self._init_valuefunc()
         else: 
             self.valuefunc = self.load_valuefunc(pickle_path)
+        self.step_size_parameter = step_size_parameter
+        self.mark = mark
 
     def _init_valuefunc(self) -> dict:
         valuefunc = {}
@@ -121,6 +120,6 @@ if __name__ == "__main__":
     g = Game()
     m.play(g)
 
-    for key in a_1.policy.valuefunc.keys():
-        if 0.5 > a_1.policy.valuefunc[key] < 1.0  :
-            print("it worked", key, a_1.policy.valuefunc[key] )
+    for key in a_1.valuefunc.keys():
+        if 0.5 > a_1.valuefunc[key] < 1.0  
+            print("it worked", key, self.valuefunc[key] )
