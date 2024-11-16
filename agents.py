@@ -9,6 +9,10 @@ class Policy(ABC):
     def predict(self, game: Game, checkvalue: str) -> int:
         pass
 
+    @abstractmethod   
+    def update(self, cur_state:  int, new_state: int):
+        pass
+
 class RandomPolicy(Policy):
     def __init__(self) -> None:
         super().__init__()
@@ -17,6 +21,9 @@ class RandomPolicy(Policy):
         free_states = game.free_states(checkvalue)
         shuffle(free_states)
         return free_states[0]
+
+    def update(self, cur_state:  int, new_state: int):
+        pass
 
 class TDPolicy(Policy):
     def __init__(self, step_size_parameter: float, exploration_parameter: float, pickle_path: str|None, mark:str) -> None:
@@ -60,16 +67,16 @@ class TDPolicy(Policy):
             assert type(value_func) == dict
             return value_func
 
-    def update(self, cur_state:  int, new_val: float):
+    def update(self, cur_state:  int, new_state: int):
         cur_val = self.valuefunc[cur_state]
-        updatestep = cur_val + self.step_size_parameter * (new_val - cur_val)
+        updatestep = cur_val + self.step_size_parameter * (self.valuefunc[new_state] - cur_val)
         assert 0 <= updatestep <= 1.0 
         self.valuefunc[cur_state] = updatestep
 
     def predict(self, game: Game, checkvalue: str) -> int:
         free_states = game.free_states(checkvalue)
         shuffle(free_states)
-
+        next_state = -1
         if random() > self.exploration_parameter:
             best_val = -1
 
@@ -81,11 +88,12 @@ class TDPolicy(Policy):
 
             if best_state is None:
                 raise Exception("no best state")
-            self.update(game._get_state_num(), best_val)
 
-            return best_state
+            next_state = best_state
         else:
-            return free_states[0]
+            next_state = free_states[0]
+
+        return next_state
 
         
 

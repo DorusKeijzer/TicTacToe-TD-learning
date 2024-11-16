@@ -21,7 +21,13 @@ class Match:
             order = [self.agent_1, self.agent_2]
         while won is False and turn < 9:
             moving_agent = order[turn % 2]
+            old_state = game._get_state_num()
             game.update_state(moving_agent.predict(game))
+            new_state = game._get_state_num()
+
+            self.agent_1.policy.update(old_state, new_state)
+            self.agent_2.policy.update(old_state, new_state)
+
             turn += 1
             if game.wins("x") or game.wins("o"):
                 won = True
@@ -38,7 +44,7 @@ if __name__ == "__main__":
     a_1_history, a_2_history, draw_history = [], [], []
     history = []
 
-    num_games = 1000000
+    num_games = 10000
     for i in range(num_games):
         g = Game()
         winner = m.play(g)
@@ -53,11 +59,20 @@ if __name__ == "__main__":
             history.append(0)
         total += 1
         if i % (num_games/100) == 0:
-            print(f"{(100*i)/num_games}%")
-            valuefunc = set([a_1.policy.valuefunc[k] for k in a_1.policy.valuefunc.keys()])
-            
-            print(len(valuefunc))
-
+            print(f"{(100*i)/num_games}%", end="\r")
+            # valuefunc = list(set([a_1.policy.valuefunc[k] for k in a_1.policy.valuefunc.keys()]))
+            # valuefunc.sort() 
+            # print(len(valuefunc))
+            # print(valuefunc)
+            # largest = 0
+            # largest_k = 0
+            # for k in a_1.policy.valuefunc.keys():
+            #     if  a_1.policy.valuefunc[k] < 1:
+            #         if a_1.policy.valuefunc[k] > largest:
+            #             largest = a_1.policy.valuefunc[k]
+            #             largest_k = k
+            # Game(largest_k).draw()
+            #
     df = pd.DataFrame({"game_number": range(len(history)), "result": history})
 
 
