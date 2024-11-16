@@ -21,12 +21,13 @@ class RandomPolicy(Policy):
 class TDPolicy(Policy):
     def __init__(self, step_size_parameter: float, pickle_path: str|None, mark:str) -> None:
         super().__init__()
+        self.mark = mark
+        self.step_size_parameter = step_size_parameter
+        
         if pickle_path is None:
             self.valuefunc = self._init_valuefunc()
         else: 
             self.valuefunc = self.load_valuefunc(pickle_path)
-        self.step_size_parameter = step_size_parameter
-        self.mark = mark
 
     def _init_valuefunc(self) -> dict:
         valuefunc = {}
@@ -103,7 +104,7 @@ class Match:
     def play(self, game: Game):
         won = False
         turn = 0
-        while won is False:
+        while won is False and turn < 9:
             moving_agent = [self.agent_1, self.agent_2][turn % 2]
             game.update_state(moving_agent.predict(game))
             game.draw()
@@ -117,9 +118,11 @@ if __name__ == "__main__":
     a_1 = Agent(TDPolicy(0.01, None, "x"), "x")
     a_2 = Agent(RandomPolicy(), "o")
     m = Match(a_1, a_2)
-    g = Game()
-    m.play(g)
 
-    for key in a_1.valuefunc.keys():
-        if 0.5 > a_1.valuefunc[key] < 1.0  
-            print("it worked", key, self.valuefunc[key] )
+
+    for i in range(100000):
+        g = Game()
+        m.play(g)
+
+    for key in a_1.policy.valuefunc.keys():
+        print(key, a_1.policy.valuefunc[key])
