@@ -1,10 +1,15 @@
 from ast import Load
+from os import walk
 from random import shuffle, random
 import pickle
 from tictactoegame import Game 
 from abc import ABC, abstractmethod
 
 class Policy(ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "Base"
+
     @abstractmethod
     def predict(self, game: Game, checkvalue: str) -> int:
         pass
@@ -16,7 +21,8 @@ class Policy(ABC):
 class RandomPolicy(Policy):
     def __init__(self) -> None:
         super().__init__()
-        
+        self.name = "Random"
+
     def predict(self, game: Game, checkvalue: str) -> int:
         free_states = game.free_states(checkvalue)
         shuffle(free_states)
@@ -25,12 +31,15 @@ class RandomPolicy(Policy):
     def update(self, cur_state:  int, new_state: int):
         pass
 
+
+
 class TDPolicy(Policy):
     def __init__(self, step_size_parameter: float, exploration_parameter: float, pickle_path: str|None, mark:str) -> None:
         super().__init__()
         self.mark = mark
         self.step_size_parameter = step_size_parameter
         self.exploration_parameter = exploration_parameter
+        self.name = "Temporal Difference"
         
         if pickle_path is None:
             self.valuefunc = self._init_valuefunc()
@@ -95,7 +104,22 @@ class TDPolicy(Policy):
 
         return next_state
 
-        
+class AnnealingTDPolicy(TDPolicy):
+    def __init__(self, 
+                 step_size_parameter: float,
+                 exploration_parameter: float, 
+                 pickle_path: str|None, 
+                 mark:str, 
+                 epsilon_min:float, 
+                 rate: float) -> None:
+        super().__init__(step_size_parameter, exploration_parameter, pickle_path, mark)       
+        self.epsilon_min = epsilon_min
+        self.rate = rate
+    
+    def predict(self, game: Game, checkvalue: str):
+        next_state = super().predict(game, checkvalue)
+        self.exploration_parameter = max(self.epsilon_min, self.exploration_parameter - self.rate)
+        return next_state
 
 
 class Agent:

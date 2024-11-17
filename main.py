@@ -1,5 +1,5 @@
 from pandas.core import window
-from agents import Agent, RandomPolicy, TDPolicy 
+from agents import Agent, RandomPolicy, TDPolicy, AnnealingTDPolicy
 from tictactoegame import Game
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -35,16 +35,16 @@ class Match:
         return winner
 
 if __name__ == "__main__":
-    a_1 = Agent(TDPolicy(0.01, 0.1, None, "o"), "o")
-    # a_2 = Agent(TDPolicy(0.01, None, "o"), "o")
-    a_2 = Agent(RandomPolicy(), "x")
-    # a_1 = Agent(RandomPolicy(), "x")
+    a_1 = Agent(TDPolicy(0.001, 0.01, None, "o"), "o")
+    a_2 = Agent(AnnealingTDPolicy(0.001, 0.01, None, "x", 0, 0.000001), "x")
+    # a_2 = Agent(RandomPolicy(), "x")
+    # a_1 = Agent(RandomPolicy(), "o")
     m = Match(a_1, a_2)
     a1_wins, a2_wins, draws, total = 0,0,0,0
     a_1_history, a_2_history, draw_history = [], [], []
     history = []
 
-    num_games = 10000
+    num_games = 2000000
     for i in range(num_games):
         g = Game()
         winner = m.play(g)
